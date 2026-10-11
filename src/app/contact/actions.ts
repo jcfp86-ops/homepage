@@ -1,7 +1,9 @@
 "use server";
 
+import { headers } from "next/headers";
 import { Resend } from "resend";
 import { site } from "@/content/site";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export type ContactValues = {
   name: string;
@@ -61,6 +63,28 @@ export async function submitEnquiry(
     message: msg,
     values,
   });
+
+  // Rate limit before touching Resend, so a script cannot drain the mail
+  // quota. Keyed on the client address Vercel sets; falls back to a shared
+  // bucket when absent, which throttles conservatively rather than not at all.
+  const headerList = await headers();
+  const clientIp =
+    headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    headerList.get("x-real-ip") ||
+    "unknown";
+
+  const limit = checkRateLimit(`contact:${clientIp}`);
+  if (!limit.allowed) {
+    console.warn(
+      `[contact] Rate limited ${clientIp} for ${limit.retryAfter}s.`,
+    );
+    const minutes = Math.ceil(limit.retryAfter / 60);
+    return fail(
+      `Too many enquiries from this connection. Please try again in ${minutes} minute${
+        minutes === 1 ? "" : "s"
+      }, or email ${site.email} directly.`,
+    );
+  }
 
   if (!name || !email || !message) {
     return fail("Please complete every required field.");
