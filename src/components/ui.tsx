@@ -10,7 +10,9 @@ export function Section({
   className?: string;
 }) {
   return (
-    <section className={`mx-auto max-w-[76rem] px-6 sm:px-8 lg:px-10 ${className}`}>
+    <section
+      className={`mx-auto max-w-[76rem] px-6 sm:px-8 lg:px-10 ${className}`}
+    >
       {children}
     </section>
   );
@@ -124,8 +126,7 @@ export function CTA({
       "border border-[var(--rule-strong)] text-[var(--ink)] hover:border-[var(--ink)]",
     onBand:
       "border border-[var(--band-soft)]/40 text-[var(--band-ink)] hover:border-[var(--band-ink)]",
-    onBandSolid:
-      "bg-[var(--band-ink)] text-[var(--band)] hover:opacity-90",
+    onBandSolid: "bg-[var(--band-ink)] text-[var(--band)] hover:opacity-90",
   }[tone];
 
   return (
@@ -154,7 +155,9 @@ export function DashItem({
     <li className={`t-body-sm flex gap-3 ${className}`}>
       <span
         aria-hidden
-        className={onBand ? "text-[var(--band-accent)]" : "text-[var(--accent)]"}
+        className={
+          onBand ? "text-[var(--band-accent)]" : "text-[var(--accent)]"
+        }
       >
         —
       </span>

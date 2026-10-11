@@ -50,10 +50,10 @@ src/content/site.ts   All copy
 The contact form sends through [Resend](https://resend.com). Set these in the
 deployment environment:
 
-| Variable | Purpose |
-| --- | --- |
-| `RESEND_API_KEY` | Resend API key |
-| `CONTACT_EMAIL` | Mailbox that receives enquiries |
+| Variable         | Purpose                         |
+| ---------------- | ------------------------------- |
+| `RESEND_API_KEY` | Resend API key                  |
+| `CONTACT_EMAIL`  | Mailbox that receives enquiries |
 
 Without `RESEND_API_KEY` the form validates input and directs visitors to email
 instead of failing silently.

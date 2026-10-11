@@ -20,7 +20,9 @@ export function pageMetadata({
   // The <title> template adds the firm name; og:title is set explicitly and
   // must carry it too, or a shared link reads as a bare word.
   const fullTitle =
-    path === "/" ? `${site.name} — ${site.discipline}` : `${title} — ${site.name}`;
+    path === "/"
+      ? `${site.name} — ${site.discipline}`
+      : `${title} — ${site.name}`;
 
   return {
     title,

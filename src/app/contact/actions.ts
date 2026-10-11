@@ -79,7 +79,9 @@ export async function submitEnquiry(
   const to = process.env.CONTACT_EMAIL || site.email;
 
   if (!apiKey) {
-    console.error("[contact] RESEND_API_KEY is not set — enquiry not delivered.");
+    console.error(
+      "[contact] RESEND_API_KEY is not set — enquiry not delivered.",
+    );
     return fail(
       `We could not send your message. Please email us directly at ${site.email}.`,
     );
