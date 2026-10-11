@@ -1,0 +1,204 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-serif), Georgia, "Times New Roman", serif;
+}
+
+:root {
+  /* Light ground, navy ink — the executive default */
+  --ground: #fcfcfb;
+  --ground-alt: #f4f5f4;
+  --ink: #0a1e31;
+  --ink-soft: #4a5b6b;
+  --rule: #dfe2e1;
+  --rule-strong: #b9bfbd;
+  --accent: #1b4f8c;
+
+  /* Inverted band — hero and closing sections */
+  --band: #0a1e31;
+  --band-ink: #f3f6f8;
+  --band-soft: #9db0c2;
+  --band-rule: #1c3a52;
+  --band-accent: #86b4e4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #061420;
+    --ground-alt: #0a1e31;
+    --ink: #f3f6f8;
+    --ink-soft: #9db0c2;
+    --rule: #14293c;
+    --rule-strong: #24435e;
+    --accent: #86b4e4;
+
+    --band: #0a1e31;
+    --band-ink: #f3f6f8;
+    --band-soft: #9db0c2;
+    --band-rule: #1c3a52;
+    --band-accent: #86b4e4;
+  }
+}
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ───────────────────────────────────────────────────────────
+   Type scale — every text element on the site uses one of
+   these. Sizes are fluid, so mobile and desktop share one
+   definition rather than diverging breakpoint overrides.
+   ─────────────────────────────────────────────────────────── */
+@layer components {
+  /* Hero headline — homepage only */
+  .t-display-xl {
+    font-family: var(--font-display);
+    font-size: clamp(2.375rem, 1.55rem + 3.6vw, 4rem);
+    line-height: 1.06;
+    letter-spacing: -0.025em;
+    font-weight: 400;
+  }
+
+  /* Page headline — every interior page */
+  .t-display-lg {
+    font-family: var(--font-display);
+    font-size: clamp(2.0625rem, 1.55rem + 2.3vw, 3.125rem);
+    line-height: 1.1;
+    letter-spacing: -0.022em;
+    font-weight: 400;
+  }
+
+  /* Section headline — h2 */
+  .t-display-md {
+    font-family: var(--font-display);
+    font-size: clamp(1.6875rem, 1.4rem + 1.35vw, 2.25rem);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 400;
+  }
+
+  /* Pull statement */
+  .t-display-sm {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 1.25rem + 1.2vw, 2.125rem);
+    line-height: 1.35;
+    letter-spacing: -0.018em;
+    font-weight: 400;
+  }
+
+  /* Statistic figure */
+  .t-figure {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 1.55rem + 0.9vw, 2.125rem);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-weight: 400;
+  }
+
+  /* Prominent card heading — used on the navy band */
+  .t-heading-lg {
+    font-family: var(--font-display);
+    font-size: 1.3125rem;
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+    font-weight: 400;
+  }
+
+  /* Card / block heading — h3 */
+  .t-heading {
+    font-family: var(--font-display);
+    font-size: 1.1875rem;
+    line-height: 1.35;
+    letter-spacing: -0.012em;
+    font-weight: 400;
+  }
+
+  /* Compact heading, sans — used where a serif would crowd */
+  .t-heading-sm {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.45;
+    letter-spacing: -0.005em;
+    font-weight: 500;
+  }
+
+  /* Standfirst beneath a headline */
+  .t-lede {
+    font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);
+    line-height: 1.65;
+    letter-spacing: -0.004em;
+  }
+
+  .t-body {
+    font-size: 1rem;
+    line-height: 1.75;
+  }
+
+  .t-body-sm {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+  }
+
+  .t-caption {
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+
+  /* Small-caps style label above a heading */
+  .t-eyebrow {
+    font-size: 0.6875rem;
+    line-height: 1.4;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+  }
+
+  /* Inline metadata, e.g. commitment · term */
+  .t-meta {
+    font-size: 0.75rem;
+    line-height: 1.5;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+
+  /* Buttons and nav */
+  .t-action {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+  }
+}
+
+/* Consistent vertical rhythm for full-width sections */
+.section-y {
+  padding-block: clamp(4.5rem, 3.5rem + 4vw, 7rem);
+}
+
+.section-y-b {
+  padding-block-end: clamp(4.5rem, 3.5rem + 4vw, 7rem);
+}
