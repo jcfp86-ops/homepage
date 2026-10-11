@@ -1,8 +1,8 @@
 name: PR Validation
 
 # Runs on every pull request into main. Deliberately kept separate from ci.yml:
-# this one reports per-check status so a failure points at the cause directly,
-# which matters while reviewing. ci.yml verifies the merged result.
+# this one reports per-check status and posts it back to the PR, so a failure
+# names its cause without opening a log. ci.yml verifies the merged result.
 
 on:
   pull_request:
@@ -17,10 +17,74 @@ permissions:
   contents: read
 
 jobs:
+  notify:
+    name: Announce
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Comment in progress
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const marker = '<!-- pr-validation-bot -->';
+            const body = [
+              marker,
+              '### PR Validation — running',
+              '',
+              `**Commit:** \`${context.payload.pull_request.head.sha.slice(0, 7)}\``,
+              `**Branch:** \`${context.payload.pull_request.head.ref}\``,
+              '',
+              '| Check | Result |',
+              '| --- | --- |',
+              '| Type check | ⏳ |',
+              '| Lint | ⏳ |',
+              '| Format | ⏳ |',
+              '| Build | ⏳ |',
+              '| Route metadata | ⏳ |',
+              '| Production audit | ⏳ |',
+              '| Docker build + smoke test | ⏳ |',
+              '',
+              `[View run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(
+              (c) => c.user.type === 'Bot' && c.body.startsWith(marker),
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
   validate:
     name: Validate Pull Request
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      typecheck: ${{ steps.typecheck.outcome }}
+      lint: ${{ steps.lint.outcome }}
+      format: ${{ steps.format.outcome }}
+      build: ${{ steps.build.outcome }}
+      metadata: ${{ steps.metadata.outcome }}
+      audit: ${{ steps.audit.outcome }}
     steps:
       - uses: actions/checkout@v7
 
@@ -32,29 +96,56 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Steps are listed individually rather than via `npm run verify` so the
-      # failing check is visible without opening the log.
+      # Each check runs to completion rather than aborting the job, so the
+      # summary comment reports every result instead of stopping at the first
+      # failure. The gate at the end fails the job if any did.
       - name: Type check
+        id: typecheck
+        continue-on-error: true
         run: npm run type-check
 
       - name: Lint
+        id: lint
+        continue-on-error: true
         run: npm run lint
 
       - name: Format check
+        id: format
+        continue-on-error: true
         run: npm run format:check
 
       - name: Build
+        id: build
+        continue-on-error: true
         run: npm run build
 
       # Catches a regression that shipped once already: `alternates` and
       # `openGraph` are inherited from the root layout, so a page that omits
-      # them silently declares the homepage as its canonical URL and drops
-      # out of the index. Runs against the build output above.
+      # them silently loses its canonical URL and drops out of the index.
       - name: Check route metadata
+        id: metadata
+        continue-on-error: true
         run: npm run check:metadata
 
       - name: Audit production dependencies
+        id: audit
+        continue-on-error: true
         run: npm audit --omit=dev --audit-level=high
+
+      - name: Gate
+        run: |
+          failed=""
+          [ "${{ steps.typecheck.outcome }}" = "success" ] || failed="$failed type-check"
+          [ "${{ steps.lint.outcome }}"      = "success" ] || failed="$failed lint"
+          [ "${{ steps.format.outcome }}"    = "success" ] || failed="$failed format"
+          [ "${{ steps.build.outcome }}"     = "success" ] || failed="$failed build"
+          [ "${{ steps.metadata.outcome }}"  = "success" ] || failed="$failed metadata"
+          [ "${{ steps.audit.outcome }}"     = "success" ] || failed="$failed audit"
+          if [ -n "$failed" ]; then
+            echo "::error::failed checks:$failed"
+            exit 1
+          fi
+          echo "all checks passed"
 
   docker:
     name: Docker build
@@ -114,3 +205,89 @@ jobs:
           fi
           docker rm -f pr-smoke >/dev/null
           exit $status
+
+  report:
+    name: Report
+    runs-on: ubuntu-latest
+    needs: [validate, docker]
+    if: always() && github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Comment result
+        uses: actions/github-script@v9
+        env:
+          TYPECHECK: ${{ needs.validate.outputs.typecheck }}
+          LINT: ${{ needs.validate.outputs.lint }}
+          FORMAT: ${{ needs.validate.outputs.format }}
+          BUILD: ${{ needs.validate.outputs.build }}
+          METADATA: ${{ needs.validate.outputs.metadata }}
+          AUDIT: ${{ needs.validate.outputs.audit }}
+          DOCKER: ${{ needs.docker.result }}
+        with:
+          script: |
+            const marker = '<!-- pr-validation-bot -->';
+
+            const checks = [
+              ['Type check', process.env.TYPECHECK],
+              ['Lint', process.env.LINT],
+              ['Format', process.env.FORMAT],
+              ['Build', process.env.BUILD],
+              ['Route metadata', process.env.METADATA],
+              ['Production audit', process.env.AUDIT],
+              ['Docker build + smoke test', process.env.DOCKER],
+            ];
+
+            const icon = (o) =>
+              o === 'success' ? '✅ pass'
+              : o === 'skipped' ? '⏭️ skipped'
+              : o === 'cancelled' ? '⚪ cancelled'
+              : '❌ fail';
+
+            const failed = checks.filter(
+              ([, o]) => o && o !== 'success' && o !== 'skipped',
+            );
+            const ok = failed.length === 0;
+
+            const body = [
+              marker,
+              `### PR Validation — ${ok ? 'passed' : 'failed'}`,
+              '',
+              `**Commit:** \`${context.payload.pull_request.head.sha.slice(0, 7)}\``,
+              `**Branch:** \`${context.payload.pull_request.head.ref}\``,
+              '',
+              '| Check | Result |',
+              '| --- | --- |',
+              ...checks.map(([name, o]) => `| ${name} | ${icon(o)} |`),
+              '',
+              ok
+                ? 'All checks passed.'
+                : `Blocking: ${failed.map(([n]) => `**${n}**`).join(', ')}.`,
+              '',
+              `[View run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(
+              (c) => c.user.type === 'Bot' && c.body.startsWith(marker),
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
