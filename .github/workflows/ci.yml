@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # type-check, lint, format:check, build
+      # type-check, lint, format:check, build, route metadata
       - name: Verify
         run: npm run verify
 
@@ -55,3 +55,62 @@ jobs:
       # and failing the build on them would block unrelated work.
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
+
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v3
+
+      # The image build is the only check that exercises the standalone output
+      # and the COPY paths. One of those broke once: `public/` is empty and git
+      # does not track empty directories, so `COPY /app/public` failed from a
+      # clean clone while local builds kept working.
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: fernandez-consulting:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Building proves it compiles; serving proves the runtime stage is wired
+      # up — correct working directory, server.js present, static assets copied.
+      - name: Serve the image and check every route
+        run: |
+          set -euo pipefail
+          docker run -d --name ci-smoke -p 3000:3000 fernandez-consulting:ci
+
+          for attempt in $(seq 1 30); do
+            if curl -fsS -o /dev/null http://localhost:3000; then
+              echo "container ready after ${attempt} attempt(s)"
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              echo "::error::container did not become ready"
+              docker logs ci-smoke
+              exit 1
+            fi
+            sleep 2
+          done
+
+          status=0
+          for route in / /program-direction /approach /leadership /contact /privacy /sitemap.xml /robots.txt; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:3000${route}")
+            if [ "$code" = "200" ]; then
+              printf 'ok   %-20s %s\n' "$route" "$code"
+            else
+              printf 'FAIL %-20s %s\n' "$route" "$code"
+              status=1
+            fi
+          done
+
+          if [ "$status" -ne 0 ]; then
+            docker logs ci-smoke
+          fi
+          docker rm -f ci-smoke >/dev/null
+          exit $status
