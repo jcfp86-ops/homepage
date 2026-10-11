@@ -1,0 +1,57 @@
+name: CI
+
+# Verifies main AFTER a merge. PR validation runs the same checks beforehand,
+# but a green PR can still land on a broken main when two PRs merge in quick
+# succession — this is what catches that, rather than the deploy.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # type-check, lint, format:check, build
+      - name: Verify
+        run: npm run verify
+
+  audit:
+    name: Security audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Production dependencies only: dev-only advisories do not reach visitors,
+      # and failing the build on them would block unrelated work.
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high

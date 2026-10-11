@@ -1,0 +1,57 @@
+name: PR Validation
+
+# Runs on every pull request into main. Deliberately kept separate from ci.yml:
+# this one reports per-check status so a failure points at the cause directly,
+# which matters while reviewing. ci.yml verifies the merged result.
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Pull Request
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Steps are listed individually rather than via `npm run verify` so the
+      # failing check is visible without opening the log.
+      - name: Type check
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Build
+        run: npm run build
+
+      # Catches a regression that shipped once already: `alternates` and
+      # `openGraph` are inherited from the root layout, so a page that omits
+      # them silently declares the homepage as its canonical URL and drops
+      # out of the index. Runs against the build output above.
+      - name: Check route metadata
+        run: npm run check:metadata
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high

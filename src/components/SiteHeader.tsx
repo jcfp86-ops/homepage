@@ -14,7 +14,10 @@ export default function SiteHeader() {
         <Logo />
 
         <div className="flex items-center gap-6 sm:gap-8">
-          <nav aria-label="Primary" className="hidden items-center gap-8 md:flex">
+          <nav
+            aria-label="Primary"
+            className="hidden items-center gap-8 md:flex"
+          >
             {nav.map((item) => (
               <Link
                 key={item.href}

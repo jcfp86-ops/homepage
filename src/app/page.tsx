@@ -57,7 +57,7 @@ export default function Home() {
             </div>
 
             {/* Core positioning, held at eye level rather than buried below */}
-            <div className="border-t border-[var(--band-rule)] pt-8 lg:mt-24 lg:border-l lg:border-t-0 lg:pl-12 lg:pt-0">
+            <div className="border-t border-[var(--band-rule)] pt-8 lg:mt-24 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-12">
               <Positioning variant="hero" />
             </div>
           </div>
@@ -180,9 +180,7 @@ export default function Home() {
         <ul className="grid gap-px border border-[var(--rule)] bg-[var(--rule)] sm:grid-cols-3">
           {credibility.map((c) => (
             <li key={c.figure} className="bg-[var(--ground)] p-7 sm:p-8">
-              <p className="t-figure text-[var(--accent)]">
-                {c.figure}
-              </p>
+              <p className="t-figure text-[var(--accent)]">{c.figure}</p>
               <p className="t-body-sm mt-4 text-[var(--ink-soft)]">{c.label}</p>
             </li>
           ))}

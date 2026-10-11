@@ -46,8 +46,8 @@ export default function LeadershipPage() {
         <div className="grid gap-12 lg:grid-cols-[1.4fr_1fr] lg:gap-16">
           <div className="max-w-2xl space-y-6">
             <p className="t-lede">
-              Fernandez Consulting is directed by its Principal. Mandates are led
-              personally rather than delegated to an analyst bench, and the
+              Fernandez Consulting is directed by its Principal. Mandates are
+              led personally rather than delegated to an analyst bench, and the
               person who scopes the program is the person accountable for
               delivering it.
             </p>
@@ -129,9 +129,7 @@ export default function LeadershipPage() {
         <ul className="grid gap-px border border-[var(--rule)] bg-[var(--rule)] sm:grid-cols-3">
           {credibility.map((c) => (
             <li key={c.figure} className="bg-[var(--ground)] p-7 sm:p-8">
-              <p className="t-figure text-[var(--accent)]">
-                {c.figure}
-              </p>
+              <p className="t-figure text-[var(--accent)]">{c.figure}</p>
               <p className="t-body-sm mt-4 text-[var(--ink-soft)]">{c.label}</p>
             </li>
           ))}

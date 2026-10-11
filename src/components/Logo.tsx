@@ -57,7 +57,7 @@ export default function Logo({
   const lockup = (
     <span className={`inline-flex items-center gap-2.5 sm:gap-3 ${className}`}>
       <LogoBlock tone={tone} />
-      <span className="whitespace-nowrap font-display text-[16.5px] leading-none tracking-[-0.015em] sm:text-[19.5px]">
+      <span className="font-display text-[16.5px] leading-none tracking-[-0.015em] whitespace-nowrap sm:text-[19.5px]">
         Fernandez Consulting
       </span>
     </span>

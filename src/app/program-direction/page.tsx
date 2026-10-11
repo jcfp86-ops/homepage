@@ -43,9 +43,7 @@ export default function ProgramDirectionPage() {
                   <span className="font-display text-sm text-[var(--accent)]">
                     {s.n}
                   </span>
-                  <h3 className="t-display-md mt-4">
-                    {s.stage}
-                  </h3>
+                  <h3 className="t-display-md mt-4">{s.stage}</h3>
                   <p className="t-body mt-4">{s.lede}</p>
                 </div>
 
