@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { pageMetadata } from "@/lib/metadata";
 import { howWeWork, distinction, engagedWhen } from "@/content/site";
 import {
   Section,
@@ -11,12 +10,24 @@ import {
 } from "@/components/ui";
 import Positioning from "@/components/Positioning";
 
-export const metadata: Metadata = pageMetadata({
+// DELIBERATE REGRESSION — do not merge.
+//
+// This drops /approach back to a plain metadata object, skipping the
+// pageMetadata() helper. The page then emits no canonical URL and no og:url
+// at all, so search engines are left to guess and a shared link carries no
+// canonical reference.
+//
+// The point is what still passes: the build compiles, types check, lint is
+// clean, the page renders correctly in a browser, and the Docker image
+// serves it with a 200. Nothing a human would notice in review.
+//
+// Only `npm run check:metadata` fails. This branch exists to prove that
+// guard is real rather than decorative.
+export const metadata: Metadata = {
   title: "Approach",
   description:
     "Rigorous strategic discipline applied to SaMD delivery: written terms of reference, fixed-fee scoping, senior direction and a deliberate exit.",
-  path: "/approach",
-});
+};
 
 export default function ApproachPage() {
   return (
